@@ -112,7 +112,7 @@ extension Test {
   ///   call it directly.
   public static func __type(
     _ containingType: Any.Type,
-    displayName: String? = nil,
+    displayName: _const String? = nil,
     traits: [any SuiteTrait],
     sourceLocation: SourceLocation
   ) -> Self {
@@ -165,7 +165,7 @@ extension Test {
     named testFunctionName: String,
     in containingType: Any.Type?,
     xcTestCompatibleSelector: __XCTestCompatibleSelector?,
-    displayName: String? = nil,
+    displayName: _const String? = nil,
     traits: [any TestTrait],
     sourceLocation: SourceLocation,
     parameters: [__ParameterInfo] = [],
@@ -226,7 +226,7 @@ extension Test {
     named testFunctionName: String,
     in containingType: Any.Type?,
     xcTestCompatibleSelector: __XCTestCompatibleSelector?,
-    displayName: String? = nil,
+    displayName: _const String? = nil,
     traits: [any TestTrait],
     arguments collection: C,
     sourceLocation: SourceLocation,
@@ -354,7 +354,7 @@ extension Test {
     named testFunctionName: String,
     in containingType: Any.Type?,
     xcTestCompatibleSelector: __XCTestCompatibleSelector?,
-    displayName: String? = nil,
+    displayName: _const String? = nil,
     traits: [any TestTrait],
     arguments collection1: C1, _ collection2: C2,
     sourceLocation: SourceLocation,
@@ -374,7 +374,7 @@ extension Test {
     named testFunctionName: String,
     in containingType: Any.Type?,
     xcTestCompatibleSelector: __XCTestCompatibleSelector?,
-    displayName: String? = nil,
+    displayName: _const String? = nil,
     traits: [any TestTrait],
     arguments zippedCollections: Zip2Sequence<C1, C2>,
     sourceLocation: SourceLocation,
@@ -628,7 +628,7 @@ extension Test {
         // Copy the exact traits from the real test in case they someday carry
         // any interesting metadata.
         let traits = test.traits.compactMap { $0 as? HiddenTrait }
-        tests[suiteID] = .__type(suiteType, displayName: nil, traits: traits, sourceLocation: test.sourceLocation)
+        tests[suiteID] = .__type(suiteType, traits: traits, sourceLocation: test.sourceLocation)
       }
     }
 

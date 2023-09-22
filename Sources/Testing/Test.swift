@@ -31,9 +31,6 @@ public struct Test: Sendable {
   /// attribute, use the ``Test/displayName`` property.
   public var name: String
 
-  /// The customized display name of this instance, if specified.
-  public var displayName: String?
-
   /// The set of traits added to this instance when it was initialized.
   public var traits: [any Trait] {
     willSet {
@@ -128,6 +125,46 @@ public struct Test: Sendable {
   /// macro.
   public var isSuite: Bool {
     containingType != nil && testCases == nil
+  }
+
+  /// Initialize a new test instance.
+  ///
+  /// - Parameters:
+  ///   - name: The name of this test.
+  ///   - displayName: The customized display name of this test, if any.
+  ///   - traits: The set of traits applied to this test.
+  ///   - sourceLocation: The source location of this test.
+  ///   - containingType: The type containing this test, if any.
+  ///   - xcTestCompatibleSelector: The XCTest-compatible Objective-C selector
+  ///   	corresponding to this instance's underlying test function.
+  ///   - testCases: The set of test cases associated with this test, if any.
+  ///   - parameters: The test function parameters, if any.
+  ///
+  /// This initializer is not part of the public interface of the testing
+  /// library.
+  init(
+    name: String,
+    displayName: String? = nil,
+    traits: [any Trait],
+    sourceLocation: SourceLocation,
+    containingType: Any.Type?,
+    xcTestCompatibleSelector: __XCTestCompatibleSelector? = nil,
+    testCases: (any TestCases)? = nil,
+    parameters: [ParameterInfo]? = nil
+  ) {
+    self.name = name
+    self.sourceLocation = sourceLocation
+    self.containingType = containingType
+    self.xcTestCompatibleSelector = xcTestCompatibleSelector
+    self.testCases = testCases
+    self.parameters = parameters
+
+    if let displayName {
+      let displayNameTrait = DisplayNameTrait(displayName: displayName)
+      self.traits = [displayNameTrait] + traits
+    } else {
+      self.traits = traits
+    }
   }
 }
 

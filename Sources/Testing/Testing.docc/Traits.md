@@ -23,6 +23,13 @@ types that customize the behavior of test functions and test suites.
 
 ## Topics
 
+### Customizing a test's display name
+
+- <doc:DefiningTests>
+- ``Test(_:_:)``
+- ``Suite(_:_:)``
+- ``DisplayNameTrait``
+
 ### Defining conditions for a test
 
 - <doc:EnablingAndDisabling>

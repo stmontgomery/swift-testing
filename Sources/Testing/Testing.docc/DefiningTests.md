@@ -55,13 +55,15 @@ Note that, while this function is a valid test function, it does not actually
 perform any action or test any code. To check for expected values and outcomes
 in test functions, add [expectations](doc:Expectations) to the test function.
 
-## Customizing a test's name
+## Customizing a test's display name
 
-To customize a test function's name as presented in an IDE or at the command
-line, supply a string literal as an argument to the `@Test` attribute:
+To customize a test's display name as presented in an IDE or at the command
+line, supply a string literal as an argument to the `@Test` or `@Suite`
+attribute:
 
 ```swift
-@Test("Food truck exists") func foodTruckExists() { ... }
+@Test("Food truck exists")
+func foodTruckExists() { ... }
 ```
 
 To further customize the appearance and behavior of a test function, use
