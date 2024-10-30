@@ -10,11 +10,41 @@
 
 /// A type that can be used to confirm that an event occurs zero or more times.
 public struct Confirmation: Sendable {
-  /// The number of times ``confirm(count:)`` has been called.
-  ///
-  /// This property is fileprivate because it may be mutated asynchronously and
-  /// callers may be tempted to use it in ways that result in data races.
-  fileprivate var count = Locked(rawValue: 0)
+  private var _expectedCountContains: @Sendable (Int) -> Bool
+
+  fileprivate init(expectedCount: some RangeExpression<Int> & Sequence<Int> & Sendable) {
+    _expectedCountContains = expectedCount.contains
+  }
+
+  private struct _State: Sendable {
+    var count = 0
+
+#if !SWT_NO_UNSTRUCTURED_TASKS
+    var continuation: CheckedContinuation<Void, Never>?
+#endif
+  }
+
+  private var _state = Locked<_State>(rawValue: .init())
+
+  fileprivate var count: Int {
+    _state.rawValue.count
+  }
+
+#if !SWT_NO_UNSTRUCTURED_TASKS
+  fileprivate func waitForConfirmation() async {
+    await withCheckedContinuation { continuation in
+      let continuation: CheckedContinuation<Void, Never>? = _state.withLock { state in
+        if _expectedCountContains(state.count) {
+          return continuation
+        } else {
+          state.continuation = continuation
+          return nil
+        }
+      }
+      continuation?.resume()
+    }
+  }
+#endif
 
   /// Confirm this confirmation.
   ///
@@ -25,7 +55,26 @@ public struct Confirmation: Sendable {
   /// directly.
   public func confirm(count: Int = 1) {
     precondition(count > 0)
-    self.count.add(count)
+
+#if !SWT_NO_UNSTRUCTURED_TASKS
+    var continuationToResume: CheckedContinuation<Void, Never>?
+#endif
+
+    _state.withLock { state in
+      state.count += count
+
+#if !SWT_NO_UNSTRUCTURED_TASKS
+      let isConfirmed = !_expectedCountContains(state.count - count) && _expectedCountContains(state.count)
+      if isConfirmed, let continuation = state.continuation {
+        state.continuation = nil
+        continuationToResume = continuation
+      }
+#endif
+    }
+
+#if !SWT_NO_UNSTRUCTURED_TASKS
+    continuationToResume?.resume()
+#endif
   }
 }
 
@@ -168,9 +217,9 @@ public func confirmation<R>(
   sourceLocation: SourceLocation = #_sourceLocation,
   _ body: (Confirmation) async throws -> sending R
 ) async rethrows -> R {
-  let confirmation = Confirmation()
+  let confirmation = Confirmation(expectedCount: expectedCount)
   defer {
-    let actualCount = confirmation.count.rawValue
+    let actualCount = confirmation.count
     if !expectedCount.contains(actualCount) {
       let issue = Issue(
         kind: .confirmationMiscounted(actual: actualCount, expected: expectedCount),
@@ -180,7 +229,14 @@ public func confirmation<R>(
       issue.record()
     }
   }
-  return try await body(confirmation)
+
+  let result = try await body(confirmation)
+
+#if !SWT_NO_UNSTRUCTURED_TASKS
+  await confirmation.waitForConfirmation()
+#endif
+
+  return result
 }
 
 /// An overload of ``confirmation(_:expectedCount:isolation:sourceLocation:_:)-l3il``

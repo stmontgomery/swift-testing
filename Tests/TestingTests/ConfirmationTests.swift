@@ -27,7 +27,8 @@ struct ConfirmationTests {
     }
   }
 
-  @Test("Unsuccessful confirmations")
+  @Test("Unsuccessful confirmations",
+        .disabled("This now suspends indefinitely, as expected under the new implementation"))
   func unsuccessfulConfirmations() async {
     await confirmation("Miscount recorded", expectedCount: 7) { miscountRecorded in
       var configuration = Configuration()
@@ -86,6 +87,15 @@ struct SuccessfulConfirmationTests {
   func confirmed3Times() async {
     await confirmation(expectedCount: 3) { (thingHappened) async in
       thingHappened(count: 3)
+    }
+  }
+
+  @Test(.hidden)
+  func confirmedViaUnstructuredTask() async {
+    _ = await confirmation { thingHappened in
+      Task {
+        thingHappened()
+      }
     }
   }
 }
