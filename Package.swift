@@ -141,7 +141,9 @@ let package = Package(
       ],
       exclude: ["CMakeLists.txt", "Testing.swiftcrossimport"],
       cxxSettings: .packageSettings,
-      swiftSettings: .packageSettings + .enableLibraryEvolution(),
+      swiftSettings: .packageSettings + .enableLibraryEvolution() + [
+        .unsafeFlags(["-module-abi-name", moduleABIName(forTargetNamed: "Testing")]),
+      ],
       linkerSettings: [
         .linkedLibrary("execinfo", .when(platforms: [.custom("freebsd"), .openbsd]))
       ]
@@ -190,19 +192,15 @@ let package = Package(
       ],
       exclude: ["CMakeLists.txt"],
       swiftSettings: .packageSettings + {
-        var result = [PackageDescription.SwiftSetting]()
-
-        // The only target which needs the ability to import this macro
-        // implementation target's module is its unit test target. Users of the
-        // macros this target implements use them via their declarations in the
-        // Testing module. This target's module is never distributed to users,
-        // but as an additional guard against accidental misuse, this specifies
-        // the unit test target as the only allowable client.
-        if buildingForDevelopment {
-          result.append(.unsafeFlags(["-Xfrontend", "-allowable-client", "-Xfrontend", "TestingMacrosTests"]))
-        }
-
-        return result
+        [
+          // The only target which needs the ability to import this macro
+          // implementation target's module is its unit test target. Users of the
+          // macros this target implements use them via their declarations in the
+          // Testing module. This target's module is never distributed to users,
+          // but as an additional guard against accidental misuse, this specifies
+          // the unit test target as the only allowable client.
+          .unsafeFlags(["-Xfrontend", "-allowable-client", "-Xfrontend", "TestingMacrosTests"]),
+        ]
       }()
     ),
 
@@ -240,7 +238,9 @@ let package = Package(
       ],
       path: "Sources/Overlays/_Testing_AppKit",
       exclude: ["CMakeLists.txt"],
-      swiftSettings: .packageSettings + .enableLibraryEvolution()
+      swiftSettings: .packageSettings + .enableLibraryEvolution() + [
+        .unsafeFlags(["-module-abi-name", moduleABIName(forTargetNamed: "Testing")]),
+      ]
     ),
     .target(
       name: "_Testing_CoreGraphics",
@@ -249,7 +249,9 @@ let package = Package(
       ],
       path: "Sources/Overlays/_Testing_CoreGraphics",
       exclude: ["CMakeLists.txt"],
-      swiftSettings: .packageSettings + .enableLibraryEvolution()
+      swiftSettings: .packageSettings + .enableLibraryEvolution() + [
+        .unsafeFlags(["-module-abi-name", moduleABIName(forTargetNamed: "_Testing_CoreGraphics")]),
+      ]
     ),
     .target(
       name: "_Testing_CoreImage",
@@ -259,7 +261,9 @@ let package = Package(
       ],
       path: "Sources/Overlays/_Testing_CoreImage",
       exclude: ["CMakeLists.txt"],
-      swiftSettings: .packageSettings + .enableLibraryEvolution()
+      swiftSettings: .packageSettings + .enableLibraryEvolution() + [
+        .unsafeFlags(["-module-abi-name", moduleABIName(forTargetNamed: "_Testing_CoreImage")]),
+      ]
     ),
     .target(
       name: "_Testing_Foundation",
@@ -271,7 +275,9 @@ let package = Package(
       // The Foundation module only has Library Evolution enabled on Apple
       // platforms, and since this target's module publicly imports Foundation,
       // it can only enable Library Evolution itself on those platforms.
-      swiftSettings: .packageSettings + .enableLibraryEvolution(.whenApple())
+      swiftSettings: .packageSettings + .enableLibraryEvolution(.whenApple()) + [
+        .unsafeFlags(["-module-abi-name", moduleABIName(forTargetNamed: "_Testing_Foundation")]),
+      ]
     ),
     .target(
       name: "_Testing_UIKit",
@@ -282,7 +288,9 @@ let package = Package(
       ],
       path: "Sources/Overlays/_Testing_UIKit",
       exclude: ["CMakeLists.txt"],
-      swiftSettings: .packageSettings + .enableLibraryEvolution()
+      swiftSettings: .packageSettings + .enableLibraryEvolution() + [
+        .unsafeFlags(["-module-abi-name", moduleABIName(forTargetNamed: "_Testing_UIKit")]),
+      ]
     ),
     .target(
       name: "_Testing_WinSDK",
@@ -291,7 +299,9 @@ let package = Package(
       ],
       path: "Sources/Overlays/_Testing_WinSDK",
       exclude: ["CMakeLists.txt"],
-      swiftSettings: .packageSettings + .enableLibraryEvolution()
+      swiftSettings: .packageSettings + .enableLibraryEvolution() + [
+        .unsafeFlags(["-module-abi-name", moduleABIName(forTargetNamed: "_Testing_WinSDK")]),
+      ]
     ),
 
     // Utility targets: These are utilities intended for use when developing
@@ -482,4 +492,26 @@ extension Array where Element == PackageDescription.CXXSetting {
 
     return result
   }
+}
+
+/// Generate the module ABI name string which should be used for package builds
+/// of a target with the specified name.
+///
+/// - Parameters:
+///   - targetName The name of the target for which an ABI name should be
+///     generated.
+///
+/// - Returns: The ABI name of the module of the target named `targetName`.
+///
+/// This function simplifies the process of specifying a custom ABI name for
+/// various targets in this package. The module ABI name is customized for all
+/// targets in this package which emit a module that is also included in the
+/// built-in copy of Swift Testing in Swift toolchains and vendor distributions.
+/// Without this, there can be runtime collisions; for example, on Darwin
+/// platforms (where Swift uses the Objective-C runtime), a non-generic Swift
+/// class type results causes a warning from the runtime about duplicate class
+/// definitions. Specifying a distinct ABI name for each module related to Swift
+/// Testing loaded into a runner process avoids this issue.
+private func moduleABIName(forTargetNamed targetName: String) -> String {
+  "\(targetName)_package"
 }
