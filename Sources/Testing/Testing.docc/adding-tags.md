@@ -10,6 +10,8 @@ See https://swift.org/LICENSE.txt for license information
 See https://swift.org/CONTRIBUTORS.txt for Swift project authors
 -->
 
+@Redirected(from: "documentation/testing/addingtags")
+
 Use tags to provide semantic information for organization, filtering, and customizing appearances.
 
 ## Overview

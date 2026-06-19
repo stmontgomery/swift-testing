@@ -10,6 +10,8 @@ See https://swift.org/LICENSE.txt for license information
 See https://swift.org/CONTRIBUTORS.txt for Swift project authors
 -->
 
+@Redirected(from: "documentation/testing/parameterizedtesting")
+
 Specify different input parameters to generate multiple test cases from a test function.
 
 ## Overview

@@ -10,6 +10,8 @@ See https://swift.org/LICENSE.txt for license information
 See https://swift.org/CONTRIBUTORS.txt for Swift project authors
 -->
 
+@Redirected(from: "documentation/testing/migratingfromxctest")
+
 <!-- NOTE: The voice of this document is directed at the second person ("you")
 because it provides instructions the reader must follow directly. -->
 
